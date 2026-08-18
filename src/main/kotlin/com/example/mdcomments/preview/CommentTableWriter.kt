@@ -28,6 +28,7 @@ object CommentTableWriter {
     private const val HEADER_ROW = "| anchor | comment | resolved |"
     private const val DIVIDER_ROW = "|---|---|---|"
     private val ANCHOR_REGEX = Regex("<!--\\s*md-comment:([a-zA-Z0-9-]+)\\s*-->")
+    private val DIVIDER_CELL = Regex(":?-+:?")
 
     /**
      * [sourceOffset] is the character offset the preview reports for the
@@ -46,7 +47,7 @@ object CommentTableWriter {
             val row = "| $anchor | $rowComment | false |"
             val text = document.text
 
-            if (!text.contains(MARKER)) {
+            if (findTableMarker(text) == null) {
                 val block = buildString {
                     if (text.isNotEmpty() && !text.endsWith("\n")) append("\n")
                     append("\n")
@@ -76,9 +77,9 @@ object CommentTableWriter {
         val document = FileDocumentManager.getInstance().getDocument(file) ?: return
         WriteCommandAction.runWriteCommandAction(project, "Remove All Markdown Comments", null, {
             // 1. Drop the table: marker line (plus the blank line before it)
-            //    through end of file.
-            val markerIndex = document.text.indexOf(MARKER)
-            if (markerIndex >= 0) {
+            // through end of file.
+            val markerIndex = findTableMarker(document.text)
+            if (markerIndex != null) {
                 val lineStart = document.getLineStartOffset(document.getLineNumber(markerIndex))
                 val deleteStart = if (lineStart > 0) lineStart - 1 else lineStart
                 document.deleteString(deleteStart, document.textLength)
@@ -120,6 +121,57 @@ object CommentTableWriter {
         document.insertString(end, " <!-- md-comment:$anchor -->")
         return anchor
     }
+
+    /**
+     * Character offset of the marker line of a *real* comments table, or null
+     * when the file has none.
+     *
+     * A bare `text.contains(MARKER)` is not enough: README-style docs render
+     * the marker inside a ``` fenced code block, and matching that sample
+     * would treat it as a live table (a comment click then appends a bare
+     * row at EOF with no heading/header). So the marker only counts when it
+     * is a standalone line outside any fence, followed by the `## Comments`
+     * heading, the `anchor/comment/resolved` header and a dashed divider.
+     *
+     * The header/divider are compared as parsed cells rather than exact
+     * strings: the IDE's Markdown formatter pads separator and cell widths
+     * (`|---|---|----------|`), so an exact-string match would miss tables
+     * the editor has reformatted.
+     */
+    private fun findTableMarker(text: String): Int? {
+        var inFence = false
+        var offset = 0
+        val lines = text.lineSequence().toList()
+        for (i in lines.indices) {
+            val line = lines[i]
+            val indent = line.takeWhile { it.isWhitespace() }.length
+            when {
+                line.trim().startsWith("```") || line.trim().startsWith("~~~") -> inFence = !inFence
+                inFence || indent >= 4 -> Unit // fenced or indented code block
+                line.trim() != MARKER -> Unit
+                else -> {
+                    val following = lines.drop(i + 1)
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                    if (isCommentsTable(following)) {
+                        return offset + line.indexOf(MARKER)
+                    }
+                }
+            }
+            offset += line.length + 1 // +1 for the trailing newline
+        }
+        return null
+    }
+
+    /** `## Comments` heading, `anchor/comment/resolved` header, dashed divider. */
+    private fun isCommentsTable(following: List<String>): Boolean {
+        if (following.size < 3 || following[0] != SECTION_HEADING) return false
+        if (tableCells(following[1]) != listOf("anchor", "comment", "resolved")) return false
+        return tableCells(following[2]).all { it.matches(DIVIDER_CELL) }
+    }
+
+    private fun tableCells(line: String): List<String> =
+        line.split("|").map { it.trim() }.filter { it.isNotEmpty() }
 
     /** Anchor id found between the given offsets, or null. */
     fun existingAnchor(document: Document, start: Int, end: Int): String? {
