@@ -1,0 +1,51 @@
+.md-comment-hover {
+  cursor: pointer;
+  background-color: rgba(255, 196, 0, 0.14);
+  outline: 1px dashed rgba(255, 170, 0, 0.55);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.md-commented {
+  position: relative;
+  border-left: 3px solid rgba(255, 170, 0, 0.7);
+  padding-left: 6px;
+}
+
+.md-commented::after {
+  content: none;
+}
+
+body.md-show-emoji .md-commented::after {
+  content: "\1F4AC";
+  font-size: 0.8em;
+  opacity: 0.85;
+  margin-left: 6px;
+  pointer-events: none;
+}
+
+.md-commented.md-comment-hover {
+  background-color: rgba(255, 196, 0, 0.22);
+}
+
+.md-comment-resolved {
+  position: relative;
+  border-left: 3px solid rgba(46, 160, 67, 0.7);
+  padding-left: 6px;
+}
+
+.md-comment-resolved::after {
+  content: none;
+}
+
+body.md-show-emoji .md-comment-resolved::after {
+  content: "\2705";
+  font-size: 0.8em;
+  opacity: 0.85;
+  margin-left: 6px;
+  pointer-events: none;
+}
+
+.md-comment-resolved.md-comment-hover {
+  background-color: rgba(46, 160, 67, 0.14);
+}

@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin compiler session logs / daemon
+.kotlin/
+
+# IntelliJ Platform Gradle plugin: bundled IDE artifacts and sandbox
+.intellijPlatform/
+
+# Build output
+out/
+
+# IDE project files (Gradle-imported project, no need to track)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# macOS
+.DS_Store

@@ -1,0 +1,49 @@
+<idea-plugin>
+    <id>com.example.mdcomments</id>
+    <name>Markdown Preview Comments</name>
+    <vendor email="you@example.com" url="https://example.com">Your Name</vendor>
+
+    <description><![CDATA[
+        Click a rendered line/block in the Markdown preview to attach a review
+        comment. Comments are appended as rows to a table
+        (anchor, comment, resolved) at the end of the .md file, where each
+        anchor is a random id embedded in the commented line as an invisible
+        HTML comment, so comments survive edits above their line.
+        <br/><br/>
+        Commenting is disabled by default; toggle it via
+        Tools | Enable Markdown Comments.
+    ]]></description>
+
+    <!-- Required: we build directly against the Markdown plugin's preview APIs -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.intellij.plugins.markdown</depends>
+
+    <!-- This is the Markdown plugin's own extension point for injecting
+         JS/CSS + a message pipe into its JCEF preview browser. -->
+    <extensions defaultExtensionNs="org.intellij.markdown">
+        <browserPreviewExtensionProvider
+            implementation="com.example.mdcomments.preview.CommentPreviewExtension$Provider"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Markdown Comments" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <group id="MarkdownComments.Group" text="Markdown Comments" popup="true">
+            <action id="MarkdownComments.Toggle"
+                    class="com.example.mdcomments.preview.ToggleMarkdownCommentingAction"
+                    text="Enable Markdown Comments"
+                    description="Allow adding review comments by clicking blocks in the Markdown preview"/>
+            <action id="MarkdownComments.ToggleEmoji"
+                    class="com.example.mdcomments.preview.ToggleCommentEmojiAction"
+                    text="Show Comment Emoji"
+                    description="Show emoji markers (💬/✅) next to commented blocks in the Markdown preview"/>
+            <action id="MarkdownComments.RemoveAll"
+                    class="com.example.mdcomments.preview.RemoveAllCommentsAction"
+                    text="Remove All Comments"
+                    description="Delete the comments table and all comment anchors from the current Markdown file"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </group>
+    </actions>
+</idea-plugin>
